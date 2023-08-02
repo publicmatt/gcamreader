@@ -47,9 +47,9 @@ def local(database_path: Path, query_path: Path, output_path: Path):
     query gcam scenario databases
     """
 
-    print(f"opening: {database_path.absolute()}", file=sys.stderr)
+    click.echo(f"opening: {database_path.absolute()}", err=True)
     if not list(database_path.glob("*.basex")):
-        print(f"basex files missing: {database_path}", file=sys.stderr)
+        click.echo(f"basex files missing: {database_path}", err=True)
         return False
     parent = str(database_path.parent)
     name = database_path.name
@@ -58,18 +58,18 @@ def local(database_path: Path, query_path: Path, output_path: Path):
     conn = LocalDBConn(parent, name)
 
     # parse query xml
-    print(f"parsing: {query_path.name}", file=sys.stderr)
+    click.echo(f"parsing: {query_path.name}", err=True)
     queries = parse_batch_query(str(query_path))
     for query in queries:
-        print(f"running: {query.title}", file=sys.stderr)
+        click.echo(f"running: {query.title}", err=True)
         df = conn.runQuery(query)
         if df is None:
-            print(f"failed: {query.title}")
+            click.echo(f"failed: {query.title}", err=True)
             continue
         out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
         df.to_csv(out, index=False, sep="|")
-        print(f"saved: {out.absolute()}", file=sys.stderr)
-    print(f"extract complete", file=sys.stderr)
+        click.echo(f"saved: {out.absolute()}", err=True)
+    click.echo(f"extract complete", err=True)
 
 
 @cli.command(name="remote")
@@ -102,7 +102,7 @@ def local(database_path: Path, query_path: Path, output_path: Path):
     type=int,
     default=8984,
     required=True,
-    help="hostname of remote server",
+    help="port on remote server",
 )
 @click.option(
     "-d",
@@ -147,15 +147,15 @@ def remote(
     )
 
     # parse query xml
-    print(f"parsing: {query_path.name}", file=sys.stderr)
+    click.echo(f"parsing: {query_path.name}", err=True)
     queries = parse_batch_query(str(query_path))
     for query in queries:
-        print(f"running: {query.title}", file=sys.stderr)
+        click.echo(f"running: {query.title}", err=True)
         df = conn.runQuery(query)
         if df is None:
-            print(f"failed: {query.title}")
+            click.echo(f"failed: {query.title}", err=True)
             continue
         out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
         df.to_csv(out, index=False, sep="|")
-        print(f"saved: {out.absolute()}", file=sys.stderr)
-    print(f"extract complete", file=sys.stderr)
+        click.echo(f"saved: {out.absolute()}", err=True)
+    click.echo(f"extract complete", err=True)
