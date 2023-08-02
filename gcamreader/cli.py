@@ -63,6 +63,9 @@ def local(database_path: Path, query_path: Path, output_path: Path):
     for query in queries:
         print(f"running: {query.title}", file=sys.stderr)
         df = conn.runQuery(query)
+        if df is None:
+            print(f"failed: {query.title}")
+            continue
         out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
         df.to_csv(out, index=False, sep="|")
         print(f"saved: {out.absolute()}", file=sys.stderr)
@@ -149,6 +152,9 @@ def remote(
     for query in queries:
         print(f"running: {query.title}", file=sys.stderr)
         df = conn.runQuery(query)
+        if df is None:
+            print(f"failed: {query.title}")
+            continue
         out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
         df.to_csv(out, index=False, sep="|")
         print(f"saved: {out.absolute()}", file=sys.stderr)
