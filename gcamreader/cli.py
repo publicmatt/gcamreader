@@ -3,6 +3,7 @@ from .querymi import LocalDBConn, RemoteDBConn, parse_batch_query
 import click
 from click_default_group import DefaultGroup
 import sys
+import subprocess
 
 
 @click.group(
@@ -62,9 +63,13 @@ def local(database_path: Path, query_path: Path, output_path: Path):
     queries = parse_batch_query(str(query_path))
     for query in queries:
         click.echo(f"running: {query.title}", err=True)
-        df = conn.runQuery(query)
-        if df is None:
+        try:
+            df = conn.runQuery(query)
+        except subprocess.CalledProcessError as e:
             click.echo(f"failed: {query.title}", err=True)
+            continue
+        if df is None:
+            click.echo(f"empty: {query.title}", err=True)
             continue
         out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
         df.to_csv(out, index=False, sep="|")
@@ -151,9 +156,13 @@ def remote(
     queries = parse_batch_query(str(query_path))
     for query in queries:
         click.echo(f"running: {query.title}", err=True)
-        df = conn.runQuery(query)
-        if df is None:
+        try:
+            df = conn.runQuery(query)
+        except subprocess.CalledProcessError as e:
             click.echo(f"failed: {query.title}", err=True)
+            continue
+        if df is None:
+            click.echo(f"empty: {query.title}", err=True)
             continue
         out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
         df.to_csv(out, index=False, sep="|")
