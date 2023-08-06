@@ -140,7 +140,7 @@ def remote(
 
     execute(conn, query_path, output_path, force)
 
-def execute(conn, query_path: Path, output_path: Path, force: bool)
+def execute(conn, query_path: Path, output_path: Path, force: bool):
     # parse query xml
     click.echo(f"parsing: {query_path.name}", err=True)
     queries = parse_batch_query(str(query_path))
