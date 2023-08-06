@@ -43,7 +43,8 @@ def cli():
     type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
     help="path to output (i.e. where .csv files should be created)",
 )
-def local(database_path: Path, query_path: Path, output_path: Path):
+@click.option("-f", "--force", type=bool, default=False, help="overwrite existing .csv in output path")
+def local(database_path: Path, query_path: Path, output_path: Path, force: bool):
     """
     query gcam scenario databases
     """
@@ -58,23 +59,7 @@ def local(database_path: Path, query_path: Path, output_path: Path):
     # establish database connection - uses ModelInterface.jar
     conn = LocalDBConn(parent, name)
 
-    # parse query xml
-    click.echo(f"parsing: {query_path.name}", err=True)
-    queries = parse_batch_query(str(query_path))
-    for query in queries:
-        click.echo(f"running: {query.title}", err=True)
-        try:
-            df = conn.runQuery(query)
-        except subprocess.CalledProcessError as e:
-            click.echo(f"failed: {query.title}", err=True)
-            continue
-        if df is None:
-            click.echo(f"empty: {query.title}", err=True)
-            continue
-        out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
-        df.to_csv(out, index=False, sep="|")
-        click.echo(f"saved: {out.absolute()}", err=True)
-    click.echo(f"extract complete", err=True)
+    execute(conn, query_path, output_path, force)
 
 
 @cli.command(name="remote")
@@ -129,6 +114,7 @@ def local(database_path: Path, query_path: Path, output_path: Path):
     type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
     help="path to output (i.e. where .csv files should be created)",
 )
+@click.option("-f", "--force", type=bool, default=False, help="overwrite existing .csv in output path")
 def remote(
     username: str,
     password: str,
@@ -137,6 +123,7 @@ def remote(
     database_name: str,
     query_path: Path,
     output_path: Path,
+    force: bool
 ):
     """
     query a remote server containing gcam scenario databases
@@ -151,10 +138,19 @@ def remote(
         dbfile=database_name,
     )
 
+    execute(conn, query_path, output_path, force)
+
+def execute(conn, query_path: Path, output_path: Path, force: bool)
     # parse query xml
     click.echo(f"parsing: {query_path.name}", err=True)
     queries = parse_batch_query(str(query_path))
     for query in queries:
+        out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
+        if out.exists():
+            click.echo(f"output exists: {out.name}", err=True)
+            if not force:
+                click.echo(f"skipping: {out.name}", err=True)
+                continue
         click.echo(f"running: {query.title}", err=True)
         try:
             df = conn.runQuery(query)
@@ -164,7 +160,6 @@ def remote(
         if df is None:
             click.echo(f"empty: {query.title}", err=True)
             continue
-        out = output_path / f"{str(query.title).replace(' ', '_').lower()}.csv"
         df.to_csv(out, index=False, sep="|")
         click.echo(f"saved: {out.absolute()}", err=True)
     click.echo(f"extract complete", err=True)
